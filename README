@@ -1,0 +1,3 @@
+Maestro plugin to provide tasks for interfacing with various "cloud" providers.
+
+Currently, this plugin centers solely around jClouds. 
