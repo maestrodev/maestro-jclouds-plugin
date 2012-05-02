@@ -35,7 +35,7 @@
     <dependency>
         <groupId>org.jclouds</groupId>
         <artifactId>jclouds-compute</artifactId>
-        <version>1.5.0-alpha.3</version>
+        <version>1.5.0-alpha.5</version>
    </dependency>
     <dependency>
       <groupId>com.maestrodev</groupId>
