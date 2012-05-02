@@ -1,4 +1,4 @@
-package com.maestrodev;
+package com.maestrodev.lucee.plugins.cloud;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -6,6 +6,8 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.json.simple.JSONObject;
+
+import com.maestrodev.lucee.plugins.cloud.CloudWorker;
 
 /**
  * Unit test for plugin.

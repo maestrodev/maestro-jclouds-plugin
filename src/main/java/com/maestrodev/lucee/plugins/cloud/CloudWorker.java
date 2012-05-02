@@ -1,7 +1,9 @@
-package com.maestrodev;
+package com.maestrodev.lucee.plugins.cloud;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.maestrodev.MaestroWorker;
 
 public class CloudWorker extends MaestroWorker {
 

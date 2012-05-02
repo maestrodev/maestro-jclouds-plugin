@@ -3,7 +3,7 @@
     "description" : "Cloud interface tasks",
     "author": "Kit Plummer",
     "version": "1.0",
-    "class": "com.maestrodev.CloudWorker",
+    "class": "com.maestrodev.lucee.plugins.cloud.CloudWorker",
     "type":"java",
     "dependencies":[
     {
