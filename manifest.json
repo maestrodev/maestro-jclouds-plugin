@@ -1,29 +1,151 @@
-[{ 
-  "name" : "clouds",
-    "description" : "Cloud interface tasks",
-    "author": "Kit Plummer",
-    "version": "1.0",
-    "class": "com.maestrodev.lucee.plugins.cloud.CloudWorker",
-    "type":"java",
-    "dependencies":[
+[
     {
-      "name":"maestro-cloud-plugin-1.0-SNAPSHOT.jar"
+      "name" : "Cloud Provision",
+      "description" : "Provisions A Virtual Machine At Cloud Provider using jClouds<br>[ssh_user] VM User For Performing Remote Tasks<br>[ssh_commands] A Set Of Shell Commands To Execute At VM Bootup<br>[image_id] ID Of The Image To Start<br>[hostname] DNS Name Of The VM To Set<br>[domain] Domain Of The Server To Set<br>[type] Name Of Cloud Provider (AWS|RackSpace|CollabNet)<br>[flavor_id] Machine Type To Start (t1.micro)<br>[groups] Security Groups <br>[key_name] Name Of The Key For Authentication<br>[availability_zone] Regional Location Of The VM (us-east-1a)<br>[user_data] Set Of Data To Pass To The VM",
+      "author" : "Carlos Sanchez",
+      "version" : "1.0",
+      "class" : "com.maestrodev.lucee.plugins.cloud.CloudWorker",
+      "type" : "java",
+      "dependencies" : [ {
+        "name" : "maestro-cloud-plugin-1.0-SNAPSHOT.jar"
+      }, {
+        "name" : "pom.xml"
+      } ],
+      "task" : {
+        "command" : "/cloud/provision",
+        "inputs" : {
+          "key_id" : {
+            "required" : true,
+            "type" : "String",
+            "value" : ""
+          },
+          "key" : {
+            "required" : true,
+            "type" : "String",
+            "value" : ""
+          },
+          "ssh_user" : {
+            "required" : true,
+            "type" : "String",
+            "value" : ""
+          },
+          "ssh_commands" : {
+            "required" : false,
+            "type" : "Array",
+            "value" : []
+          },
+          "image_id" : {
+            "required" : true,
+            "type" : "String",
+            "value" : ""
+          },
+          "hostname" : {
+            "required" : false,
+            "type" : "String",
+            "value" : ""
+          },
+          "domain" : {
+            "required" : true,
+            "type" : "String",
+            "value" : ""
+          },
+          "type" : {
+            "required" : true,
+            "type" : "String",
+            "value" : ""
+          },
+          "flavor_id" : {
+            "required" : true,
+            "type" : "String",
+            "value" : ""
+          },
+          "groups" : {
+            "required" : true,
+            "type" : "String",
+            "value" : ""
+          },
+          "key_name" : {
+            "required" : true,
+            "type" : "String",
+            "value" : ""
+          },
+          "private_key_path" : {
+            "required" : false,
+            "type" : "String",
+            "value" : ""
+          },
+          "availability_zone" : {
+            "required" : true,
+            "type" : "String",
+            "value" : "us-east-1a"
+          },
+          "provision_command" : {
+            "required" : false,
+            "type" : "String",
+            "value" : ""
+          },
+          "deprovision_command" : {
+            "required" : false,
+            "type" : "String",
+            "value" : ""
+          },
+          "bootstrap" : {
+            "required" : false,
+            "type" : "String",
+            "value" : ""
+          },
+          "user_data" : {
+            "required" : false,
+            "type" : "String",
+            "value" : ""
+          }
+        },
+        "outputs" : {},
+        "tool_name" : "Cloud"
+      }
     },
     {
-      "name":"pom.xml"
-    }
-  ],
-    "task":{
-      "command" : "/cloud/ec2Provision",    
-      "inputs" : {"body" : {"value" : "", "type" : "String", "required" : true},
-        "nickname":{"value" : "", "type" : "String", "required" : true},
-        "server":{"value" : "", "type" : "String", "required" : true},
-        "password":{"value" : "", "type" : "Password", "required" : false},
-        "ssl":{"value" : "", "type" : "Boolean", "required" : false},
-        "port":{"value" : "", "type" : "Integer", "required" : true},
-        "channel":{"value" : "", "type" : "String", "required" : true}															
-      },
-      "outputs" : {},
-      "tool_name":"Cloud"
-    }
-}]
+      "name" : "Cloud Deprovision",
+      "description" : "Terminates A VM Running In A Cloud Environment using jClouds<br>[ssh_user] User For Remote Commands <br>[ssh_commands] Commands To Be Run Before Terminations<br>[key_name] Key Used For Authentication",
+      "author" : "Carlos Sanchez",
+      "version" : "1.0",
+      "class" : "com.maestrodev.lucee.plugins.cloud.CloudWorker",
+      "type" : "java",
+      "dependencies" : [ {
+        "name" : "maestro-cloud-plugin-1.0-SNAPSHOT.jar"
+      }, {
+        "name" : "pom.xml"
+      } ],
+      "task" : {
+        "command" : "/cloud/deprovision",
+        "inputs" : {
+          "key_id" : {
+            "required" : true,
+            "type" : "String",
+            "value" : ""
+          },
+          "key" : {
+            "required" : true,
+            "type" : "String",
+            "value" : ""
+          },
+          "ssh_user" : {
+            "required" : true,
+            "type" : "String",
+            "value" : ""
+          },
+          "ssh_commands" : {
+            "required" : true,
+            "type" : "Array",
+            "value" : []
+          },
+          "key_name" : {
+            "required" : true,
+            "type" : "String",
+            "value" : ""
+          }
+        },
+        "outputs" : {},
+        "tool_name" : "Cloud"
+      }
+    } ]
