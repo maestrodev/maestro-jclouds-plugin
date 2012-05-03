@@ -16,17 +16,6 @@
     <level value="debug" />
   </logger>
 
-  <!-- other loggers -->
-  <logger name="org.springframework">
-    <level value="warn" />
-  </logger>
-  <logger name="org.hibernate">
-    <level value="warn" />
-  </logger>
-  <logger name="org.hibernate.SQL">
-    <level value="info" />
-  </logger>
-
   <!-- Root Logger -->
   <root>
     <level value="info" />
