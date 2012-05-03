@@ -1,58 +1,78 @@
 package com.maestrodev.lucee.plugins.cloud;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.json.simple.JSONObject;
 
-import com.maestrodev.lucee.plugins.cloud.CloudWorker;
+import org.json.simple.JSONObject;
+import org.junit.Test;
 
 /**
- * Unit test for plugin.
+ * Tests for Maestro Cloud plugin.
  */
-public class CloudWorkerTest 
-    extends TestCase
+public class CloudWorkerTest
 {
     /**
-     * Create the test case
-     *
-     * @param testName name of the test case
+     * Test CloudWorker Provision
      */
-    public CloudWorkerTest( String testName )
-    {
-        super( testName );
-    }
-
-    /**
-     * @return the suite of tests being tested
-     */
-    public static Test suite()
-    {
-        return new TestSuite( CloudWorkerTest.class );
-    }
-    
-    /**x
-     * Test CloudWorker
-     */
-    public void testEc2Provision() throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
+    @SuppressWarnings( "unchecked" )
+    @Test
+    public void testProvision()
+        throws Exception
     {
         CloudWorker cloudWorker = new CloudWorker();
         JSONObject fields = new JSONObject();
-        fields.put("secretkey", "xxx");
-        fields.put("key_id", "yyy");        
-        fields.put("keypair", "keypair");
-        fields.put("image_id", "image_id");
-        fields.put("security_group", "security_group");
-        fields.put("flavor_id", "t1.micro");
-        
+        // required
+        fields.put( "key_id", "yyy" );
+        fields.put( "key", "xxx" );
+        fields.put( "ssh_user", "xxx" );
+        fields.put( "image_id", "image_id" );
+        fields.put( "domain", "xxx" );
+        fields.put( "type", "xxx" );
+        fields.put( "flavor_id", "t1.micro" );
+        fields.put( "groups", "g" );
+        fields.put( "key_name", "g" );
+        fields.put( "availability_zone", "g" );
+
+        // optional
+        fields.put( "ssh_commands", new String[] {} );
+        fields.put( "hostname", "xxx" );
+        fields.put( "private_key_path", "g" );
+        fields.put( "provision_command", "path" );
+        fields.put( "deprovision_command", "path" );
+        fields.put( "bootstrap", "path" );
+        fields.put( "user_data", "path" );
+
         JSONObject workitem = new JSONObject();
-        workitem.put("fields", fields);
-        cloudWorker.setWorkitem(workitem);
-               
-        Method method = cloudWorker.getClass().getMethod("ec2Provision");
-        method.invoke(cloudWorker);
+        workitem.put( "fields", fields );
+        cloudWorker.setWorkitem( workitem );
+
+        Method method = cloudWorker.getClass().getMethod( "provision" );
+        method.invoke( cloudWorker );
     }
-    
+
+    /**
+     * Test CloudWorker Deprovision
+     */
+    @Test
+    @SuppressWarnings( "unchecked" )
+    public void testDeprovision()
+        throws Exception
+    {
+        CloudWorker cloudWorker = new CloudWorker();
+        JSONObject fields = new JSONObject();
+        // required
+        fields.put( "key_id", "yyy" );
+        fields.put( "key", "xxx" );
+        fields.put( "ssh_user", "xxx" );
+        fields.put( "key_name", "g" );
+        // optional
+        fields.put( "ssh_commands", new String[] {} );
+
+        JSONObject workitem = new JSONObject();
+        workitem.put( "fields", fields );
+        cloudWorker.setWorkitem( workitem );
+
+        Method method = cloudWorker.getClass().getMethod( "deprovision" );
+        method.invoke( cloudWorker );
+    }
+
 }

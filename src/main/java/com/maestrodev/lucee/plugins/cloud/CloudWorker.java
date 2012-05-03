@@ -1,26 +1,47 @@
 package com.maestrodev.lucee.plugins.cloud;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.maestrodev.MaestroWorker;
 
-public class CloudWorker extends MaestroWorker {
+public class CloudWorker
+    extends MaestroWorker
+{
 
-    public CloudWorker() {
+    public CloudWorker()
+    {
         super();
     }
 
     /**
-    * EC2 Provision Task
-    **/
-    public void ec2Provision() throws Exception {
-        try{
-           
-            
-        } catch (Exception e){
-            setError("Error Posting Message " + e.getMessage());
+     * Cloud Provision Task
+     **/
+    public void provision()
+        throws Exception
+    {
+        try
+        {
+
+        }
+        catch ( Exception e )
+        {
+            setError( "Error Posting Message " + e.getMessage() );
         }
     }
 
+    /**
+     * Cloud Deprovision task
+     * 
+     * @throws Exception
+     */
+    public void deprovision()
+        throws Exception
+    {
+        try
+        {
+
+        }
+        catch ( Exception e )
+        {
+            setError( "Error Posting Message " + e.getMessage() );
+        }
+    }
 }
