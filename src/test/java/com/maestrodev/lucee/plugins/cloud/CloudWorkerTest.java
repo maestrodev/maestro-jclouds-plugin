@@ -1,5 +1,7 @@
 package com.maestrodev.lucee.plugins.cloud;
 
+import static org.junit.Assert.*;
+
 import java.lang.reflect.Method;
 
 import org.json.simple.JSONObject;
@@ -47,6 +49,8 @@ public class CloudWorkerTest
 
         Method method = cloudWorker.getClass().getMethod( "provision" );
         method.invoke( cloudWorker );
+
+        //assertNull( cloudWorker.getError(), cloudWorker.getError() );
     }
 
     /**
@@ -73,6 +77,8 @@ public class CloudWorkerTest
 
         Method method = cloudWorker.getClass().getMethod( "deprovision" );
         method.invoke( cloudWorker );
+
+        //assertNull( cloudWorker.getError(), cloudWorker.getError() );
     }
 
 }

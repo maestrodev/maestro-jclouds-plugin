@@ -11,6 +11,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jclouds.version>1.5.0-alpha.5</jclouds.version>
     <slf4j.version>1.5.8</slf4j.version>
   </properties>
 
@@ -27,25 +28,50 @@
 
   <dependencies>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.10</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jclouds</groupId>
-      <artifactId>jclouds-compute</artifactId>
-      <version>1.5.0-alpha.5</version>
-    </dependency>
-    <dependency>
       <groupId>com.maestrodev</groupId>
       <artifactId>maestro-plugin</artifactId>
       <version>1.1-SNAPSHOT</version>
     </dependency>
     <dependency>
+      <groupId>org.jclouds</groupId>
+      <artifactId>jclouds-compute</artifactId>
+      <version>${jclouds.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jclouds.driver</groupId>
+      <artifactId>jclouds-slf4j</artifactId>
+      <version>${jclouds.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jclouds.driver</groupId>
+      <artifactId>jclouds-jsch</artifactId>
+      <version>${jclouds.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jclouds.driver</groupId>
+      <artifactId>jclouds-enterprise</artifactId>
+      <version>${jclouds.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jclouds</groupId>
+      <artifactId>jclouds-allcompute</artifactId>
+      <version>${jclouds.version}</version>
+    </dependency>
+<!--     <dependency>
+      <groupId>org.jclouds.provider</groupId>
+      <artifactId>aws-ec2</artifactId>
+      <version>${jclouds.version}</version>
+    </dependency>
+ -->    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
-      <version>1.5.8</version>
+      <version>${slf4j.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.10</version>
       <scope>test</scope>
     </dependency>
     <dependency>
