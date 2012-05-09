@@ -49,6 +49,11 @@
     </dependency>
     <dependency>
       <groupId>org.jclouds.driver</groupId>
+      <artifactId>jclouds-sshj</artifactId>
+      <version>${jclouds.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jclouds.driver</groupId>
       <artifactId>jclouds-enterprise</artifactId>
       <version>${jclouds.version}</version>
     </dependency>
@@ -57,16 +62,17 @@
       <artifactId>jclouds-allcompute</artifactId>
       <version>${jclouds.version}</version>
     </dependency>
-<!--     <dependency>
+<!--
+    <dependency>
       <groupId>org.jclouds.provider</groupId>
       <artifactId>aws-ec2</artifactId>
       <version>${jclouds.version}</version>
     </dependency>
- -->    <dependency>
+ -->
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
       <version>${slf4j.version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

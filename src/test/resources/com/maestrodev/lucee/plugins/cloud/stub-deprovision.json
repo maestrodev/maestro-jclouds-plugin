@@ -1,0 +1,10 @@
+{
+  "fields": {
+    "key_id":"XXX",
+    "key":"XXX"
+    "key_name":"lucee-demo-keypair",
+    "ssh_user":"root",
+
+    "ssh_commands":["ls"]
+  }
+}

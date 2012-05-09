@@ -1,23 +1,49 @@
 package com.maestrodev.lucee.plugins.cloud;
 
+import static com.google.common.base.Charsets.*;
+import static com.google.common.collect.Iterables.*;
+import static java.lang.String.*;
+import static org.jclouds.aws.ec2.reference.AWSEC2Constants.*;
+import static org.jclouds.compute.config.ComputeServiceProperties.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
-import org.jclouds.aws.ec2.compute.AWSEC2TemplateOptions;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.jclouds.ContextBuilder;
+import org.jclouds.apis.ApiMetadata;
+import org.jclouds.apis.Apis;
+import org.jclouds.compute.ComputeService;
 import org.jclouds.compute.ComputeServiceContext;
-import org.jclouds.compute.ComputeServiceContextFactory;
-import org.jclouds.compute.RunNodesException;
 import org.jclouds.compute.domain.NodeMetadata;
 import org.jclouds.compute.domain.Template;
+import org.jclouds.compute.domain.TemplateBuilder;
+import org.jclouds.compute.options.TemplateOptions;
+import org.jclouds.domain.LoginCredentials;
+import org.jclouds.ec2.compute.options.EC2TemplateOptions;
 import org.jclouds.enterprise.config.EnterpriseConfigurationModule;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
-import org.jclouds.ssh.jsch.config.JschSshClientModule;
+import org.jclouds.providers.ProviderMetadata;
+import org.jclouds.providers.Providers;
+import org.jclouds.sshj.config.SshjSshClientModule;
+import org.json.simple.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+import com.google.common.io.Files;
 import com.google.inject.Module;
 import com.maestrodev.MaestroWorker;
 
@@ -26,6 +52,15 @@ public class CloudWorker
 {
 
     private final Logger logger = LoggerFactory.getLogger( this.getClass() );
+
+    private static final Map<String, ApiMetadata> allApis =
+        Maps.uniqueIndex( Apis.viewableAs( ComputeServiceContext.class ), Apis.idFunction() );
+
+    private static final Map<String, ProviderMetadata> appProviders =
+        Maps.uniqueIndex( Providers.viewableAs( ComputeServiceContext.class ), Providers.idFunction() );
+
+    private static final Set<String> allKeys = ImmutableSet.copyOf( Iterables.concat( appProviders.keySet(),
+                                                                                      allApis.keySet() ) );
 
     public CloudWorker()
     {
@@ -36,47 +71,111 @@ public class CloudWorker
      * Cloud Provision Task
      **/
     public void provision()
-        throws Exception
     {
         logger.debug( "Starting provisioning" );
 
-        ComputeServiceContext context = null;
+        String groupName = "Maestro";
+
+        String provider = getField( "type" );
+        String identity = getField( "key_id" );
+        String credential = getField( "key" );
+        String groups = getField( "groups" );
+        // TODO this should be an array
+        List<String> securityGroups = Arrays.asList( groups.split( " " ) );
+        String domain = getField( "domain" );
+        String keyName = getField( "key_name" );
+        String sshUser = getField( "ssh_user" );
+        String imageId = getField( "image_id" );
+        String flavorId = getField( "flavor_id" );
+        String availabilityZone = getField( "availability_zone" );
+
+        // optional
+        String privateKeyPath = getField( "private_key_path" );
+        JSONArray sshCommands = (JSONArray) getFields().get( "ssh_commands" );
+        String provisionCommand = getField( "provision_command" );
+        String deprovisionCommand = getField( "deprovision_command" );
+        String bootstrap = getField( "bootstrap" );
+        String userData = getField( "user_data" );
+
+        // check if a provider is present ahead of time
+        if ( !contains( allKeys, provider ) )
+        {
+            logger.error( "Provider {} not in supported list: {}", provider, allKeys );
+            setError( format( "Provider %s not in supported list: %s", provider, allKeys ) );
+            return;
+        }
+
+        /* EC2 image ids must contain the region */
+        if ( isAmazon( provider ) )
+        {
+            String region = availabilityZone.substring( 0, availabilityZone.length() - 1 );
+            imageId = region + "/" + imageId;
+        }
+
+        ComputeService compute = null;
         try
         {
-            context = getContext( getField( "type" ), getField( "key_id" ), getField( "key" ) );
+            compute = initComputeService( provider, identity, credential );
+            String hostname = processHostname( compute );
 
-            // TODO this should be an array
-            String groups = getField( "groups" );
-            List<String> securityGroups = Arrays.asList( groups.split( " " ) );
+            logger.debug( "adding node to group {}", groupName );
 
-            provisionNodes( context, getField( "image_id" ), getField( "availability_zone" ), getField( "flavor_id" ),
-                            getField( "key_name" ), securityGroups, getField( "user_data" ) );
+            // Default template chooses the smallest size on an operating system
+            // that tested to work with java, which tends to be Ubuntu or CentOS
+            TemplateBuilder templateBuilder = compute.templateBuilder();
 
-            // TODO set fields: instance_dns, type,....
+            // note this will create a user with the same name as you on the
+            // node. ex. you can connect via ssh publicip
+            // Statement bootInstructions = AdminAccess.standard();
 
-            // TODO
-            getField( "ssh_user" );
-            getField( "domain" );
+            // to run commands as root, we use the runScript option in the template.
+            Template template = templateBuilder.imageId( imageId ).build();// .locationId( availabilityZone
+                                                                           // ).hardwareId( flavorId ).options(
+            TemplateOptions options = template.getOptions();
 
-            // optional
-            getField( "ssh_commands" );
-            getField( "hostname" );
-            getField( "private_key_path" );
-            getField( "provision_command" );
-            getField( "deprovision_command" );
-            getField( "bootstrap" );
+            // run scripts on startup
+            if ( !StringUtils.isEmpty( privateKeyPath ) )
+            {
+                options.overrideLoginCredentials( getLoginCredentials( privateKeyPath ) );
+            }
+            options.runScript( bootstrap ).blockOnComplete( true );
+
+            // name the instance
+            options.getUserMetadata().put( "Name", hostname + "." + domain );
+
+            if ( isAmazon( provider ) )
+            {
+                template.getOptions().as( EC2TemplateOptions.class ).securityGroups( securityGroups ).keyPair( keyName ).userData( userData.getBytes() );
+            }
+
+            NodeMetadata node = getOnlyElement( compute.createNodesInGroup( "default", 1, template ) );
+            logger.info( "Started node {}: {}", node.getId(),
+                         concat( node.getPrivateAddresses(), node.getPublicAddresses() ) );
+
+            // setField( "ip", node.getPublicAddresses(). );
+            setField( "instance_id", node.getProviderId() );
+            setField( "instance_dns", "" );
+            Set<String> privateAddresses = node.getPrivateAddresses();
+
+            // write_output( "\nLaunched machine: <a href=\"http://#{m.name}\">#{m.name} - id: #{m.instance_id}</a>" );
+
+            // Capture an array of machines so that we can know what to deprovision if necessary
+            machinePush( node.getProviderId() );
+            Iterator<String> it = node.getPublicAddresses().iterator();
+            String publicAddress = it.hasNext() ? it.next() : node.getProviderId();
+            setField( "body", "Provisioned machine at " + publicAddress );
 
         }
         catch ( Exception e )
         {
             logger.error( "Error provisioning", e );
-            setError( "Error provisioning " + e.getMessage() );
+            setError( "Error provisioning: " + e.getMessage() );
         }
         finally
         {
-            if ( context != null )
+            if ( compute != null )
             {
-                context.close();
+                compute.getContext().close();
             }
         }
         logger.debug( "Done provisioning" );
@@ -92,28 +191,36 @@ public class CloudWorker
     {
         logger.debug( "Starting deprovisioning" );
 
-        ComputeServiceContext context = null;
+        String provider = getField( "type" );
+        String identity = getField( "key_id" );
+        String credential = getField( "key" );
+
+        // required
+        getField( "ssh_user" );
+        getField( "key_name" );
+        // optional
+        getField( "ssh_commands" );
+
+        String id = getField( "instance_id" );
+
+        ComputeService compute = null;
         try
         {
-            context = getContext( getField( "type" ), getField( "key_id" ), getField( "key" ) );
-            deprovisionNodes( context, getField( "instance_id" ) );
+            compute = initComputeService( provider, identity, credential );
 
-            // required
-            getField( "ssh_user" );
-            getField( "key_name" );
-            // optional
-            getField( "ssh_commands" );
+            compute.destroyNode( id );
+
         }
         catch ( Exception e )
         {
             logger.error( "Error deprovisioning", e );
-            setError( "Error deprovisioning " + e.getMessage() );
+            setError( "Error deprovisioning: " + e.getMessage() );
         }
         finally
         {
-            if ( context != null )
+            if ( compute != null )
             {
-                context.close();
+                compute.getContext().close();
             }
         }
         logger.debug( "Done deprovisioning" );
@@ -124,86 +231,96 @@ public class CloudWorker
      * 
      * @param provider supported provider from http://www.jclouds.org/documentation/reference/supported-providers, ie.
      *            aws-ec2
-     * @param user
-     * @param password
+     * @param identity
+     * @param credential
      * @return
      */
-    private ComputeServiceContext getContext( String provider, String user, String password )
+    private ComputeService initComputeService( String provider, String identity, String credential )
     {
-        // ContextBuilder contextBuilder = ContextBuilder.newBuilder( provider );
-        // RestContext context = contextBuilder.credentials( user, password ).build();
 
-        Properties overrides = new Properties();
-        Set<Module> wiring =
-            ImmutableSet.<Module> of( new JschSshClientModule(), new SLF4JLoggingModule(),
+        // example of specific properties, in this case optimizing image list to
+        // only amazon supplied
+        Properties properties = new Properties();
+
+        // don't prefetch Alestic, Canonical, RightScale images
+        properties.setProperty( PROPERTY_EC2_AMI_QUERY, "" );
+
+        // without this it won't find the AMI
+        properties.setProperty( PROPERTY_EC2_CC_AMI_QUERY, "" );
+
+        long scriptTimeout = TimeUnit.MILLISECONDS.convert( 20, TimeUnit.MINUTES );
+        properties.setProperty( TIMEOUT_SCRIPT_COMPLETE, scriptTimeout + "" );
+
+        // injecting a ssh implementation
+        Iterable<Module> modules =
+            ImmutableSet.<Module> of( new SshjSshClientModule(), new SLF4JLoggingModule(),
                                       new EnterpriseConfigurationModule() );
 
         logger.info( "Connecting to cloud {}", provider );
-        ComputeServiceContext context =
-            new ComputeServiceContextFactory().createContext( provider, user, password, wiring, overrides );
 
-        return context;
+        ContextBuilder builder =
+            ContextBuilder.newBuilder( provider ).credentials( identity, credential ).modules( modules ).overrides( properties );
+
+        logger.debug( "Initializing cloud {}", builder.getApiMetadata() );
+
+        return builder.buildView( ComputeServiceContext.class ).getComputeService();
     }
 
-    /**
-     * Launch a server in the cloud
-     * 
-     * @return
-     * @throws RunNodesException
-     */
-    private Set<? extends NodeMetadata> provisionNodes( ComputeServiceContext context, String imageId,
-                                                        String locationId, String hardwareId, String keyName,
-                                                        List<String> securityGroups, String userData )
-        throws RunNodesException
+    private LoginCredentials getLoginForCommandExecution( String user, String privateKeyPath )
+        throws IOException
     {
-
-        // pick the image id template
-        Template template =
-            context.getComputeService().templateBuilder().imageId( imageId ).locationId( locationId ).hardwareId( hardwareId ).build();
-
-        // EC2 specific config for security groups and keys
-        template.getOptions().as( AWSEC2TemplateOptions.class ).securityGroups( securityGroups ).keyPair( keyName ).userData( userData.getBytes() );
-
-        // run node accessible via group
-        Set<? extends NodeMetadata> nodes = context.getComputeService().createNodesInGroup( "webserver", 1, template );
-
-        return nodes;
-
-        // }
-        // catch ( NoSuchElementException e )
-        // {
-        // logger.error( "Unable to find Maestro image in cloud matching {}", imageId );
-        // return nodes;
-        // }
-
-        // for ( NodeMetadata instance : nodes )
-        // {
-        // Image image = imageService.findOrCreateByImageId( instance.getImageId() );
-        // server.setInstanceId( instance.getProviderId() );
-        // Set<String> privateAddresses = instance.getPrivateAddresses();
-        // if ( ( privateAddresses != null ) && ( !privateAddresses.isEmpty() ) )
-        // {
-        // server.setHost( privateAddresses.iterator().next() );
-        // }
-        // server.setImage( image );
-        // server.setPlatform( platform.toString() );
-        // server.setType( ServerType.EC2 );
-        // server.setCreatedAt( Calendar.getInstance() );
-        // if ( StringUtils.isEmpty( image.getName() ) )
-        // {
-        // template = templateBuilder.imageId( instance.getImageId() ).build();
-        // image.setName( template.getImage().getDescription() );
-        // image.setUpdatedAt( Calendar.getInstance() );
-        // imageService.updateImage( image );
-        // }
-        // }
-
+        String privateKey = Files.toString( new File( privateKeyPath ), UTF_8 );
+        return LoginCredentials.builder().user( user ).privateKey( privateKey ).build();
     }
 
-    private void deprovisionNodes( ComputeServiceContext context, String id )
-        throws RunNodesException
+    private boolean isAmazon( String provider )
     {
-        // destroy node using id
-        context.getComputeService().destroyNode( id );
+        return "aws-ec2".equals( provider );
+    }
+
+    private String processHostname( ComputeService compute )
+    {
+        String hostname = getField( "hostname" );
+        if ( StringUtils.isEmpty( hostname ) )
+        {
+            try
+            {
+                hostname = InetAddress.getLocalHost().getHostName();
+            }
+            catch ( UnknownHostException e )
+            {
+                hostname = "localhost";
+            }
+            hostname += "_" + compute.listNodes().size();
+        }
+        return hostname;
+    }
+
+    @SuppressWarnings( "unchecked" )
+    private void machinePush( String instanceId )
+    {
+        JSONArray machines = (JSONArray) getFields().get( "machines" );
+        if ( machines == null )
+        {
+            machines = new JSONArray();
+        }
+        machines.add( instanceId );
+        getFields().put( "machines", machines );
+    }
+
+    protected LoginCredentials getLoginCredentials( String privateKeyPath )
+        throws IOException
+    {
+        File file = new File( privateKeyPath );
+        if ( !file.exists() )
+        {
+            File anotherFile = new File( System.getProperty( "user.home" ) + "/.ssh/" + privateKeyPath );
+            if ( anotherFile.exists() )
+            {
+                file = anotherFile;
+            }
+        }
+        String privateKeyString = FileUtils.readFileToString( file.getAbsoluteFile(), UTF_8.displayName() );
+        return LoginCredentials.builder().privateKey( privateKeyString ).build();
     }
 }

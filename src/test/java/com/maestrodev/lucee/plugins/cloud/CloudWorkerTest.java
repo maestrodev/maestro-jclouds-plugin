@@ -2,9 +2,15 @@ package com.maestrodev.lucee.plugins.cloud;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 
+import org.apache.commons.io.IOUtils;
+import org.jclouds.domain.LoginCredentials;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.junit.Test;
 
 /**
@@ -12,73 +18,88 @@ import org.junit.Test;
  */
 public class CloudWorkerTest
 {
+    private static final JSONParser parser = new JSONParser();
+
     /**
-     * Test CloudWorker Provision
+     * Live Test for CloudWorker Provision in AWS
      */
-    @SuppressWarnings( "unchecked" )
-    @Test
-    public void testProvision()
+    // @Test
+    public void testProvisionAws()
         throws Exception
     {
         CloudWorker cloudWorker = new CloudWorker();
-        JSONObject fields = new JSONObject();
-        // required
-        fields.put( "key_id", "yyy" );
-        fields.put( "key", "xxx" );
-        fields.put( "ssh_user", "xxx" );
-        fields.put( "image_id", "image_id" );
-        fields.put( "domain", "xxx" );
-        fields.put( "type", "xxx" );
-        fields.put( "flavor_id", "t1.micro" );
-        fields.put( "groups", "g" );
-        fields.put( "key_name", "g" );
-        fields.put( "availability_zone", "g" );
 
-        // optional
-        fields.put( "ssh_commands", new String[] {} );
-        fields.put( "hostname", "xxx" );
-        fields.put( "private_key_path", "g" );
-        fields.put( "provision_command", "path" );
-        fields.put( "deprovision_command", "path" );
-        fields.put( "bootstrap", "path" );
-        fields.put( "user_data", "path" );
-
-        JSONObject workitem = new JSONObject();
-        workitem.put( "fields", fields );
-        cloudWorker.setWorkitem( workitem );
+        cloudWorker.setWorkitem( loadJson( "aws-provision" ) );
 
         Method method = cloudWorker.getClass().getMethod( "provision" );
         method.invoke( cloudWorker );
 
-        //assertNull( cloudWorker.getError(), cloudWorker.getError() );
+        assertNull( cloudWorker.getError(), cloudWorker.getError() );
     }
 
     /**
-     * Test CloudWorker Deprovision
+     * Live Test for CloudWorker Deprovision in AWS
      */
-    @Test
-    @SuppressWarnings( "unchecked" )
-    public void testDeprovision()
+    // @Test
+    public void testDeprovisionAws()
         throws Exception
     {
         CloudWorker cloudWorker = new CloudWorker();
-        JSONObject fields = new JSONObject();
-        // required
-        fields.put( "key_id", "yyy" );
-        fields.put( "key", "xxx" );
-        fields.put( "ssh_user", "xxx" );
-        fields.put( "key_name", "g" );
-        // optional
-        fields.put( "ssh_commands", new String[] {} );
-
-        JSONObject workitem = new JSONObject();
-        workitem.put( "fields", fields );
-        cloudWorker.setWorkitem( workitem );
+        cloudWorker.setWorkitem( loadJson( "aws-deprovision" ) );
 
         Method method = cloudWorker.getClass().getMethod( "deprovision" );
         method.invoke( cloudWorker );
 
-        //assertNull( cloudWorker.getError(), cloudWorker.getError() );
+        assertNull( cloudWorker.getError(), cloudWorker.getError() );
+    }
+
+    @Test
+    @SuppressWarnings( "unchecked" )
+    public void testProvisionWrongProvider()
+        throws Exception
+    {
+        CloudWorker cloudWorker = new CloudWorker();
+        JSONObject json = loadJson( "aws-provision" );
+        ( (JSONObject) json.get( "fields" ) ).put( "type", "aws" );
+        cloudWorker.setWorkitem( json );
+
+        Method method = cloudWorker.getClass().getMethod( "provision" );
+        method.invoke( cloudWorker );
+
+        assertTrue( cloudWorker.getError(), cloudWorker.getError().matches( "Provider aws not in supported list.*" ) );
+    }
+
+    @Test
+    public void testGetLoginCredentials()
+        throws Exception
+    {
+        CloudWorker cloudWorker = new CloudWorker();
+        LoginCredentials credentials = cloudWorker.getLoginCredentials( "src/test/resources/test-key" );
+        assertNotNull( credentials.getPrivateKey() );
+    }
+
+    private JSONObject loadJson( String name )
+        throws IOException, ParseException
+    {
+        InputStream is = null;
+        try
+        {
+            String f = "com/maestrodev/lucee/plugins/cloud/" + name + ".json";
+            is = this.getClass().getClassLoader().getResourceAsStream( f );
+            if ( is == null )
+            {
+                throw new IllegalStateException( "File not found " + f );
+            }
+            else
+            {
+                JSONObject json = (JSONObject) parser.parse( IOUtils.toString( is ) );
+                return json;
+            }
+        }
+        finally
+        {
+            IOUtils.closeQuietly( is );
+        }
     }
 
 }

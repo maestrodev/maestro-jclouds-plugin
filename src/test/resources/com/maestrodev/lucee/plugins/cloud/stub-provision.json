@@ -1,0 +1,22 @@
+{
+  "fields": {
+    "key_id":"XXX",
+    "key":"XXX",
+    "ssh_user":"root",
+    "image_id":"ami-61ab6708",
+    "domain":"demo",
+    "type":"stub",
+    "flavor_id":"t1.micro",
+    "groups":"quick-start-1",
+    "key_name":"lucee-demo-keypair",
+    "availability_zone":"us-east-1a",
+  
+    "provision_command":"",
+    "private_key_path":"lucee-demo-keypair.pem",
+    "bootstrap":"",
+    "ssh_commands":["mkdir -p /usr/share/tomcat6/.m2 && chown tomcat.tomcat /usr/share/tomcat6/.m2"],
+    "hostname":"",
+    "user_data":"",
+    "deprovision_command":""
+  }
+}
