@@ -59,7 +59,7 @@ public class CloudWorkerTest
         throws Exception
     {
         CloudWorker cloudWorker = new CloudWorker();
-        JSONObject json = loadJson( "aws-provision" );
+        JSONObject json = loadJson( "stub-provision" );
         ( (JSONObject) json.get( "fields" ) ).put( "type", "aws" );
         cloudWorker.setWorkitem( json );
 
