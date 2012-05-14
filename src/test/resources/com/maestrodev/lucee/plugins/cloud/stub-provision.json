@@ -12,7 +12,7 @@
     "availability_zone":"stub",
 
     "provision_command":"",
-    "private_key_path":"lucee-demo-keypair.pem",
+    "private_key_path":"src/test/resources/test-key",
     "bootstrap":"",
     "ssh_commands":[],
     "hostname":"jclouds",
