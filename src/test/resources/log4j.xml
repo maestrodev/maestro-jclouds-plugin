@@ -21,6 +21,11 @@
     <priority value="trace" />
   </category>
 
+  <!-- noisy loggers -->
+  <category name="net.schmizz.sshj">
+    <priority value="warn" />
+  </category>
+
   <!-- Root Logger -->
   <root>
     <level value="info" />

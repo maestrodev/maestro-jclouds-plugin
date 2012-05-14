@@ -1,13 +1,21 @@
 package com.maestrodev.lucee.plugins.cloud;
 
+import static com.google.common.collect.Iterables.*;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.jclouds.compute.ComputeService;
+import org.jclouds.compute.domain.ComputeMetadata;
+import org.jclouds.compute.domain.NodeMetadata;
+import org.jclouds.compute.domain.NodeState;
 import org.jclouds.domain.LoginCredentials;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -21,36 +29,93 @@ public class CloudWorkerTest
     private static final JSONParser parser = new JSONParser();
 
     /**
-     * Live Test for CloudWorker Provision in AWS
+     * Live Test for CloudWorker Provision and Deprovision in AWS
      */
     // @Test
-    public void testProvisionAws()
+    public void testAws()
         throws Exception
     {
         CloudWorker cloudWorker = new CloudWorker();
 
         cloudWorker.setWorkitem( loadJson( "aws-provision" ) );
 
-        Method method = cloudWorker.getClass().getMethod( "provision" );
-        method.invoke( cloudWorker );
+        cloudWorker.provision();
+
+        assertNull( cloudWorker.getError(), cloudWorker.getError() );
+
+        assertTrue( cloudWorker.getField( "body" ).matches( "Provisioned machine at .*" ) );
+        assertFalse( cloudWorker.getField( "ip" ), StringUtils.isEmpty( cloudWorker.getField( "ip" ) ) );
+        assertFalse( cloudWorker.getField( "instance_id" ), StringUtils.isEmpty( cloudWorker.getField( "instance_id" ) ) );
+        assertFalse( cloudWorker.getField( "instance_dns" ),
+                     StringUtils.isEmpty( cloudWorker.getField( "instance_dns" ) ) );
+        JSONArray machines = (JSONArray) cloudWorker.getFields().get( "machines" );
+        assertEquals( 1, machines.size() );
+        String machine = (String) machines.get( 0 );
+        assertTrue( machine, machine.matches( "us-east-1/i-[.]{8}" ) );
+
+        cloudWorker.deprovision();
 
         assertNull( cloudWorker.getError(), cloudWorker.getError() );
     }
 
     /**
-     * Live Test for CloudWorker Deprovision in AWS
+     * Test for CloudWorker Provision and Deprovision with stub provider
      */
-    // @Test
-    public void testDeprovisionAws()
+    @Test
+    public void testStub()
         throws Exception
     {
         CloudWorker cloudWorker = new CloudWorker();
-        cloudWorker.setWorkitem( loadJson( "aws-deprovision" ) );
 
-        Method method = cloudWorker.getClass().getMethod( "deprovision" );
-        method.invoke( cloudWorker );
+        cloudWorker.setWorkitem( loadJson( "stub-provision" ) );
+
+        // provision
+        cloudWorker.provision();
 
         assertNull( cloudWorker.getError(), cloudWorker.getError() );
+
+        assertTrue( cloudWorker.getField( "body" ).matches( "Provisioned machine at .*" ) );
+        assertFalse( cloudWorker.getField( "ip" ), StringUtils.isEmpty( cloudWorker.getField( "ip" ) ) );
+        assertFalse( cloudWorker.getField( "instance_id" ), StringUtils.isEmpty( cloudWorker.getField( "instance_id" ) ) );
+        assertFalse( cloudWorker.getField( "instance_dns" ),
+                     StringUtils.isEmpty( cloudWorker.getField( "instance_dns" ) ) );
+        JSONArray machines = (JSONArray) cloudWorker.getFields().get( "machines" );
+        assertEquals( 1, machines.size() );
+        String machine = (String) machines.get( 0 );
+        assertEquals( "1", machine );
+
+        // compare stub data
+        ComputeService compute = cloudWorker.getComputeService();
+        Set<? extends ComputeMetadata> nodes = compute.listNodes();
+        assertEquals( 1, nodes.size() );
+        ComputeMetadata node = getOnlyElement( nodes );
+        NodeMetadata metadata = compute.getNodeMetadata( node.getId() );
+        assertEquals( NodeState.RUNNING, metadata.getState() );
+
+        // deprovision
+        cloudWorker.deprovision();
+        assertNull( cloudWorker.getError(), cloudWorker.getError() );
+
+        // wait a bit until nodes are destroyed
+        for ( int i = 0; i < 100; i++ )
+        {
+            nodes = compute.listNodes();
+            if ( nodes.size() > 0 )
+            {
+                node = getOnlyElement( nodes );
+                metadata = compute.getNodeMetadata( node.getId() );
+                assertEquals( NodeState.TERMINATED, metadata.getState() );
+                // provider takes some time to destroy the nodes
+                // see StubComputeServiceAdapter.destroyNodes
+                Thread.sleep( 2000 );
+            }
+            else
+            {
+                break;
+            }
+        }
+        nodes = compute.listNodes();
+        assertEquals( 0, nodes.size() );
     }
 
     @Test
@@ -74,18 +139,27 @@ public class CloudWorkerTest
         throws Exception
     {
         CloudWorker cloudWorker = new CloudWorker();
-        LoginCredentials credentials = cloudWorker.getLoginCredentials( "src/test/resources/test-key" );
+        LoginCredentials credentials = cloudWorker.getLoginCredentials( "user", "src/test/resources/test-key" );
         assertNotNull( credentials.getPrivateKey() );
+        assertEquals( "user", credentials.getUser() );
+
+        credentials = cloudWorker.getLoginCredentials( null, "src/test/resources/test-key" );
+        assertNotNull( credentials.getPrivateKey() );
+        assertEquals( "root", credentials.getUser() );
+
+        credentials = cloudWorker.getLoginCredentials( "", "src/test/resources/test-key" );
+        assertNotNull( credentials.getPrivateKey() );
+        assertEquals( "root", credentials.getUser() );
     }
 
-    private JSONObject loadJson( String name )
+    public static JSONObject loadJson( String name )
         throws IOException, ParseException
     {
         InputStream is = null;
         try
         {
             String f = "com/maestrodev/lucee/plugins/cloud/" + name + ".json";
-            is = this.getClass().getClassLoader().getResourceAsStream( f );
+            is = CloudWorkerTest.class.getClassLoader().getResourceAsStream( f );
             if ( is == null )
             {
                 throw new IllegalStateException( "File not found " + f );
