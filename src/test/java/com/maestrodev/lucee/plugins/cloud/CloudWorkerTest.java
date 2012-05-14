@@ -104,10 +104,14 @@ public class CloudWorkerTest
             {
                 node = getOnlyElement( nodes );
                 metadata = compute.getNodeMetadata( node.getId() );
-                assertEquals( NodeState.TERMINATED, metadata.getState() );
-                // provider takes some time to destroy the nodes
-                // see StubComputeServiceAdapter.destroyNodes
-                Thread.sleep( 2000 );
+                // node may get deleted between listNodes() and getNodeMetadata()
+                if ( metadata != null )
+                {
+                    assertEquals( NodeState.TERMINATED, metadata.getState() );
+                    // provider takes some time to destroy the nodes
+                    // see StubComputeServiceAdapter.destroyNodes
+                    Thread.sleep( 2000 );
+                }
             }
             else
             {
