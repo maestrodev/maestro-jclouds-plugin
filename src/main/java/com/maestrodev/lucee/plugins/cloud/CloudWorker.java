@@ -49,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -185,7 +186,8 @@ public class CloudWorker
             writeOutput( msg );
 
             // execute the ssh and provision commands
-            executeScripts( compute, loginCredentials, and( inGroup( JCLOUDS_GROUP_NAME ), withIds( node.getId() ) ),
+            executeScripts( compute, loginCredentials,
+                            Predicates.<NodeMetadata> and( inGroup( JCLOUDS_GROUP_NAME ), withIds( node.getId() ) ),
                             sshCommands, provisionCommand );
 
             // Capture an array of machines so that we can know what to deprovision if necessary
@@ -244,11 +246,13 @@ public class CloudWorker
                 // credentials to run scripts
                 LoginCredentials loginCredentials = getLoginCredentials();
 
-                executeScripts( compute, loginCredentials, and( withIds( ids ), not( TERMINATED ) ), sshCommands, null );
+                executeScripts( compute, loginCredentials,
+                                Predicates.<NodeMetadata> and( withIds( ids ), not( TERMINATED ) ), sshCommands, null );
             }
 
             Set<? extends NodeMetadata> nodes =
-                compute.destroyNodesMatching( and( withIds( ids ), inGroup( JCLOUDS_GROUP_NAME ) ) );
+                compute.destroyNodesMatching( Predicates.<NodeMetadata> and( withIds( ids ),
+                                                                             inGroup( JCLOUDS_GROUP_NAME ) ) );
 
             String msg;
             if ( nodes.isEmpty() || ( nodes.size() != machines.size() ) )
