@@ -257,12 +257,11 @@ public class CloudWorker
                 LoginCredentials loginCredentials = getLoginCredentials();
 
                 executeScripts( compute, loginCredentials,
-                                Predicates.<NodeMetadata> and( withIds( ids ), not( TERMINATED ) ), sshCommands, null );
+                                and( inGroup( JCLOUDS_GROUP_NAME ), withIds( ids ), RUNNING ), sshCommands, null );
             }
 
             Set<? extends NodeMetadata> nodes =
-                compute.destroyNodesMatching( Predicates.<NodeMetadata> and( withIds( ids ),
-                                                                             inGroup( JCLOUDS_GROUP_NAME ) ) );
+                compute.destroyNodesMatching( and( withIds( ids ), inGroup( JCLOUDS_GROUP_NAME ) ) );
 
             if ( nodes.isEmpty() || ( nodes.size() != machines.size() ) )
             {
