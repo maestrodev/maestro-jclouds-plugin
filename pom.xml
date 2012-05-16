@@ -30,7 +30,7 @@
     <dependency>
       <groupId>com.maestrodev</groupId>
       <artifactId>maestro-plugin</artifactId>
-      <version>1.1-SNAPSHOT</version>
+      <version>1.2-SNAPSHOT</version>
     </dependency>
 
     <!-- jclouds -->
@@ -59,16 +59,9 @@
       <artifactId>jclouds-enterprise</artifactId>
       <version>${jclouds.version}</version>
     </dependency>
-<!--
     <dependency>
       <groupId>org.jclouds</groupId>
       <artifactId>jclouds-allcompute</artifactId>
-      <version>${jclouds.version}</version>
-    </dependency>
- -->
-    <dependency>
-      <groupId>org.jclouds.provider</groupId>
-      <artifactId>aws-ec2</artifactId>
       <version>${jclouds.version}</version>
     </dependency>
 
