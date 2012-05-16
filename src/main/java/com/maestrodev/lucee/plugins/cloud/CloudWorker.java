@@ -91,7 +91,7 @@ public class CloudWorker
     public void provision()
         throws RunNodesException, RunScriptOnNodesException
     {
-        String msg = "Starting provisioning";
+        String msg = "Starting provisioning\n";
         logger.debug( msg );
         writeOutput( msg );
 
@@ -176,7 +176,7 @@ public class CloudWorker
             // getOnlyElement( filter( compute.listNodesDetailsMatching( all() ),
             // and( inGroup( JCLOUDS_GROUP_NAME ), not( TERMINATED ) ) ) );
 
-            msg = format( "Started node %s: %s", node.getId(), node.getPublicAddresses() );
+            msg = format( "Started node %s: %s%n", node.getId(), node.getPublicAddresses() );
             logger.info( msg );
             writeOutput( msg );
 
@@ -189,7 +189,7 @@ public class CloudWorker
             setField( "instance_dns", publicAddress );
 
             msg =
-                format( "Launched machine: <a href=\"http://%s\">%s - id: %s</a>", publicAddress, publicAddress,
+                format( "Launched machine: <a href=\"http://%s\">%s - id: %s</a>%n", publicAddress, publicAddress,
                         node.getProviderId() );
             logger.debug( msg );
             writeOutput( msg );
@@ -207,8 +207,8 @@ public class CloudWorker
         }
         catch ( AuthorizationException e )
         {
-            logger.error( format( "Error provisioning: authorization error for key id %s", identity ), e );
-            setError( format( "Error provisioning: authorization error for key id %s: %s", identity, e.getMessage() ) );
+            logger.error( format( "Error provisioning: authorization error for key id %s: %s", identity, e.getMessage() ) );
+            setError( format( "Error provisioning: authorization error for key id %s: %s%n", identity, e.getMessage() ) );
         }
         finally
         {
@@ -218,7 +218,7 @@ public class CloudWorker
             }
         }
 
-        msg = "Done provisioning";
+        msg = "Done provisioning\n";
         logger.debug( msg );
         writeOutput( msg );
     }
@@ -231,7 +231,7 @@ public class CloudWorker
     public void deprovision()
         throws Exception
     {
-        String msg = "Starting deprovisioning";
+        String msg = "Starting deprovisioning\n";
         logger.info( msg );
         writeOutput( msg );
 
@@ -265,12 +265,12 @@ public class CloudWorker
 
             if ( nodes.isEmpty() || ( nodes.size() != machines.size() ) )
             {
-                msg = format( "Not all machines were deprovisioned, tried: %s. Deprovisioned: %s", machines, nodes );
+                msg = format( "Not all machines were deprovisioned, tried: %s. Deprovisioned: %s%n", machines, nodes );
                 setError( msg );
             }
             else
             {
-                msg = format( "Deprovisioned machines: %s", nodes );
+                msg = format( "Deprovisioned machines: %s%n", nodes );
             }
             logger.debug( msg );
             writeOutput( msg );
@@ -288,7 +288,7 @@ public class CloudWorker
                 compute.getContext().close();
             }
         }
-        msg = "Done deprovisioning";
+        msg = "Done deprovisioning\n";
         logger.debug( msg );
         writeOutput( msg );
     }
