@@ -6,6 +6,7 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
@@ -79,7 +80,7 @@ public class CloudWorkerTest
         assertFalse( cloudWorker.getField( "instance_id" ), StringUtils.isEmpty( cloudWorker.getField( "instance_id" ) ) );
         assertFalse( cloudWorker.getField( "instance_dns" ),
                      StringUtils.isEmpty( cloudWorker.getField( "instance_dns" ) ) );
-        JSONArray machines = (JSONArray) cloudWorker.getFields().get( "machines" );
+        List<String> machines = cloudWorker.getArrayField( String.class, "machines" );
         assertEquals( 1, machines.size() );
         String machine = (String) machines.get( 0 );
         assertEquals( "1", machine );
