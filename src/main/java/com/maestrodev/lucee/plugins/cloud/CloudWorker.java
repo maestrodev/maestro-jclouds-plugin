@@ -156,8 +156,9 @@ public class CloudWorker
                 options.runScript( bootstrap ).blockOnComplete( true );
             }
 
-            // name the instance
-            options.getUserMetadata().put( "Name", hostname + "." + domain );
+            // name the instance with the Name tag
+            String nameTag = hostname + ( isEmpty( domain ) ? "" : "." + domain );
+            options.getUserMetadata().put( "Name", nameTag );
 
             // Amazon specific options
             if ( isAmazon( provider ) )
