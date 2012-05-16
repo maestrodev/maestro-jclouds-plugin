@@ -28,6 +28,7 @@ import org.jclouds.apis.ApiMetadata;
 import org.jclouds.apis.Apis;
 import org.jclouds.compute.ComputeService;
 import org.jclouds.compute.ComputeServiceContext;
+import org.jclouds.compute.RunNodesException;
 import org.jclouds.compute.RunScriptOnNodesException;
 import org.jclouds.compute.domain.ExecResponse;
 import org.jclouds.compute.domain.NodeMetadata;
@@ -44,7 +45,6 @@ import org.jclouds.rest.AuthorizationException;
 import org.jclouds.scriptbuilder.domain.Statement;
 import org.jclouds.scriptbuilder.domain.Statements;
 import org.jclouds.sshj.config.SshjSshClientModule;
-import org.json.simple.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,10 +84,16 @@ public class CloudWorker
 
     /**
      * Cloud Provision Task
+     * 
+     * @throws RunNodesException
+     * @throws RunScriptOnNodesException
      **/
     public void provision()
+        throws RunNodesException, RunScriptOnNodesException
     {
-        logger.debug( "Starting provisioning" );
+        String msg = "Starting provisioning";
+        logger.debug( msg );
+        writeOutput( msg );
 
         String provider = getField( "type" );
         String identity = getField( "key_id" );
@@ -102,7 +108,7 @@ public class CloudWorker
         String availabilityZone = getField( "availability_zone" );
 
         // optional
-        JSONArray sshCommands = (JSONArray) getFields().get( "ssh_commands" );
+        List<String> sshCommands = getArrayField( String.class, "ssh_commands" );
         String provisionCommand = getField( "provision_command" );
         String bootstrap = getField( "bootstrap" );
         String userData = getField( "user_data" );
@@ -169,7 +175,10 @@ public class CloudWorker
             // NodeMetadata node =
             // getOnlyElement( filter( compute.listNodesDetailsMatching( all() ),
             // and( inGroup( JCLOUDS_GROUP_NAME ), not( TERMINATED ) ) ) );
-            logger.info( "Started node {}: {}", node.getId(), node.getPublicAddresses() );
+
+            msg = format( "Started node %s: %s", node.getId(), node.getPublicAddresses() );
+            logger.info( msg );
+            writeOutput( msg );
 
             logger.debug( "Node: {}", node );
 
@@ -179,7 +188,7 @@ public class CloudWorker
             setField( "instance_id", node.getProviderId() );
             setField( "instance_dns", publicAddress );
 
-            String msg =
+            msg =
                 format( "Launched machine: <a href=\"http://%s\">%s - id: %s</a>", publicAddress, publicAddress,
                         node.getProviderId() );
             logger.debug( msg );
@@ -192,6 +201,7 @@ public class CloudWorker
 
             // Capture an array of machines so that we can know what to deprovision if necessary
             machinePush( node.getId() );
+
             setField( "body", format( "Provisioned machine at %s", publicAddress ) );
 
         }
@@ -200,11 +210,6 @@ public class CloudWorker
             logger.error( format( "Error provisioning: authorization error for key id %s", identity ), e );
             setError( format( "Error provisioning: authorization error for key id %s: %s", identity, e.getMessage() ) );
         }
-        catch ( Exception e )
-        {
-            logger.error( "Error provisioning", e );
-            setError( format( "Error provisioning: %s", e.getMessage() ) );
-        }
         finally
         {
             if ( compute != null )
@@ -212,7 +217,10 @@ public class CloudWorker
                 compute.getContext().close();
             }
         }
-        logger.debug( "Done provisioning" );
+
+        msg = "Done provisioning";
+        logger.debug( msg );
+        writeOutput( msg );
     }
 
     /**
@@ -220,19 +228,20 @@ public class CloudWorker
      * 
      * @throws Exception
      */
-    @SuppressWarnings( "unchecked" )
     public void deprovision()
         throws Exception
     {
-        logger.debug( "Starting deprovisioning" );
+        String msg = "Starting deprovisioning";
+        logger.info( msg );
+        writeOutput( msg );
 
         String provider = getField( "type" );
         String identity = getField( "key_id" );
         String credential = getField( "key" );
 
-        JSONArray sshCommands = (JSONArray) getFields().get( "ssh_commands" );
+        List<String> sshCommands = getArrayField( String.class, "ssh_commands" );
 
-        JSONArray machines = (JSONArray) getFields().get( "machines" );
+        List<String> machines = getArrayField( String.class, "machines" );
         String[] ids = (String[]) machines.toArray( new String[0] );
 
         ComputeService compute = null;
@@ -254,7 +263,6 @@ public class CloudWorker
                 compute.destroyNodesMatching( Predicates.<NodeMetadata> and( withIds( ids ),
                                                                              inGroup( JCLOUDS_GROUP_NAME ) ) );
 
-            String msg;
             if ( nodes.isEmpty() || ( nodes.size() != machines.size() ) )
             {
                 msg = format( "Not all machines were deprovisioned, tried: %s. Deprovisioned: %s", machines, nodes );
@@ -273,11 +281,6 @@ public class CloudWorker
             logger.error( format( "Error deprovisioning: authorization error for key id %s", identity ), e );
             setError( format( "Error deprovisioning: authorization error for key id %s: %s", identity, e.getMessage() ) );
         }
-        catch ( Exception e )
-        {
-            logger.error( "Error deprovisioning", e );
-            setError( "Error deprovisioning: " + e.getMessage() );
-        }
         finally
         {
             if ( compute != null )
@@ -285,7 +288,9 @@ public class CloudWorker
                 compute.getContext().close();
             }
         }
-        logger.debug( "Done deprovisioning" );
+        msg = "Done deprovisioning";
+        logger.debug( msg );
+        writeOutput( msg );
     }
 
     /**
@@ -365,9 +370,8 @@ public class CloudWorker
         return hostname;
     }
 
-    @SuppressWarnings( "unchecked" )
     private void executeScripts( ComputeService compute, LoginCredentials loginCredentials,
-                                 Predicate<NodeMetadata> predicate, JSONArray sshCommands, String provisionCommand )
+                                 Predicate<NodeMetadata> predicate, List<String> sshCommands, String provisionCommand )
         throws RunScriptOnNodesException
     {
         // execute commands after instance is up
@@ -417,17 +421,16 @@ public class CloudWorker
     @SuppressWarnings( "unchecked" )
     private void machinePush( String instanceId )
     {
-        JSONArray machines = (JSONArray) getFields().get( "machines" );
+        List<String> machines = getArrayField( String.class, "machines" );
         if ( machines == null )
         {
-            machines = new JSONArray();
+            machines = Lists.newArrayList();
         }
         machines.add( instanceId );
         getFields().put( "machines", machines );
     }
 
     protected LoginCredentials getLoginCredentials()
-        throws IOException
     {
         String sshUser = getField( "ssh_user" );
         String privateKeyPath = getField( "private_key_path" );
@@ -435,7 +438,6 @@ public class CloudWorker
     }
 
     protected LoginCredentials getLoginCredentials( String user, String privateKeyPath )
-        throws IOException
     {
         user = isEmpty( user ) ? "root" : user;
 
@@ -453,7 +455,17 @@ public class CloudWorker
                 file = anotherFile;
             }
         }
-        String privateKeyString = Files.toString( file.getAbsoluteFile(), UTF_8 );
+        String privateKeyString;
+
+        try
+        {
+            privateKeyString = Files.toString( file.getAbsoluteFile(), UTF_8 );
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( format( "Error reading file %s: %s", file.getAbsoluteFile(), e.getMessage() ),
+                                        e );
+        }
 
         return LoginCredentials.builder().user( user ).privateKey( privateKeyString ).build();
     }
