@@ -89,7 +89,6 @@ public class CloudWorker
      * @throws RunScriptOnNodesException
      **/
     public void provision()
-        throws RunNodesException, RunScriptOnNodesException
     {
         String msg = "Starting provisioning\n";
         logger.debug( msg );
@@ -205,11 +204,27 @@ public class CloudWorker
 
             setField( "body", format( "Provisioned machine at %s", publicAddress ) );
 
+            msg = "Done provisioning\n";
+            logger.debug( msg );
+            writeOutput( msg );
         }
         catch ( AuthorizationException e )
         {
-            logger.error( format( "Error provisioning: authorization error for key id %s: %s", identity, e.getMessage() ) );
-            setError( format( "Error provisioning: authorization error for key id %s: %s%n", identity, e.getMessage() ) );
+            msg = format( "Error provisioning: authorization error for key id %s: %s%n", identity, e.getMessage() );
+            logger.error( msg );
+            setError( msg );
+        }
+        catch ( RunNodesException e )
+        {
+            msg = format( "Error provisioning, running nodes: %s%n", e.getMessage() );
+            logger.error( msg, e );
+            setError( printExecutionErrors( e.getExecutionErrors(), msg ) );
+        }
+        catch ( RunScriptOnNodesException e )
+        {
+            msg = format( "Error provisioning, running scripts on nodes: %s%n", e.getMessage() );
+            logger.error( msg );
+            setError( printExecutionErrors( e.getExecutionErrors(), msg ) );
         }
         finally
         {
@@ -218,10 +233,6 @@ public class CloudWorker
                 compute.getContext().close();
             }
         }
-
-        msg = "Done provisioning\n";
-        logger.debug( msg );
-        writeOutput( msg );
     }
 
     /**
@@ -230,7 +241,6 @@ public class CloudWorker
      * @throws Exception
      */
     public void deprovision()
-        throws Exception
     {
         String msg = "Starting deprovisioning\n";
         logger.info( msg );
@@ -276,11 +286,20 @@ public class CloudWorker
             logger.debug( msg );
             writeOutput( msg );
 
+            msg = "Done deprovisioning\n";
+            logger.debug( msg );
+            writeOutput( msg );
         }
         catch ( AuthorizationException e )
         {
             logger.error( format( "Error deprovisioning: authorization error for key id %s", identity ), e );
             setError( format( "Error deprovisioning: authorization error for key id %s: %s", identity, e.getMessage() ) );
+        }
+        catch ( RunScriptOnNodesException e )
+        {
+            msg = format( "Error deprovisioning, running scripts on nodes: %s%n", e.getMessage() );
+            logger.error( msg, e );
+            setError( printExecutionErrors( e.getExecutionErrors(), msg ) );
         }
         finally
         {
@@ -289,9 +308,6 @@ public class CloudWorker
                 compute.getContext().close();
             }
         }
-        msg = "Done deprovisioning\n";
-        logger.debug( msg );
-        writeOutput( msg );
     }
 
     /**
@@ -468,5 +484,14 @@ public class CloudWorker
         }
 
         return LoginCredentials.builder().user( user ).privateKey( privateKeyString ).build();
+    }
+
+    private String printExecutionErrors( Map<?, ? extends Throwable> errors, String msg )
+    {
+        for ( Entry<?, ? extends Throwable> entry : errors.entrySet() )
+        {
+            msg.concat( format( "Error %s: %s", entry.getKey(), entry.getValue().getMessage() ) );
+        }
+        return msg;
     }
 }
