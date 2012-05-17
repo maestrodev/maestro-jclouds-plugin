@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -97,9 +96,7 @@ public class CloudWorker
         String provider = getField( "type" );
         String identity = getField( "key_id" );
         String credential = getField( "key" );
-        String groups = getField( "groups" );
-        // TODO this should be an array
-        List<String> securityGroups = Arrays.asList( groups.split( " " ) );
+        List<String> groups = getArrayField( String.class, "groups" );
         String domain = getField( "domain" );
         String keyName = getField( "key_name" );
         String imageId = getField( "image_id" );
@@ -163,7 +160,7 @@ public class CloudWorker
             if ( isAmazon( provider ) )
             {
                 EC2TemplateOptions ec2Options = template.getOptions().as( EC2TemplateOptions.class );
-                ec2Options.securityGroups( securityGroups ).keyPair( keyName );
+                ec2Options.securityGroups( groups ).keyPair( keyName );
                 if ( !isEmpty( userData ) )
                 {
                     ec2Options.userData( userData.getBytes() );
@@ -380,13 +377,14 @@ public class CloudWorker
         String hostname = getField( "hostname" );
         if ( isEmpty( hostname ) )
         {
+            // set name to the agent that created the node
             try
             {
-                hostname = InetAddress.getLocalHost().getHostName();
+                hostname = format( "maestro-%s", InetAddress.getLocalHost().getHostName() );
             }
             catch ( UnknownHostException e )
             {
-                hostname = "localhost";
+                hostname = "maestro-localhost";
             }
         }
         return hostname;

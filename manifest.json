@@ -39,16 +39,6 @@
             "type" : "String",
             "value" : ""
           },
-          "hostname" : {
-            "required" : false,
-            "type" : "String",
-            "value" : ""
-          },
-          "domain" : {
-            "required" : false,
-            "type" : "String",
-            "value" : ""
-          },
           "type" : {
             "required" : true,
             "type" : "String",
@@ -61,8 +51,8 @@
           },
           "groups" : {
             "required" : true,
-            "type" : "String",
-            "value" : "default"
+            "type" : "Array",
+            "value" : ["default"]
           },
           "key_name" : {
             "required" : true,
@@ -80,11 +70,6 @@
             "value" : "us-east-1a"
           },
           "provision_command" : {
-            "required" : false,
-            "type" : "String",
-            "value" : ""
-          },
-          "deprovision_command" : {
             "required" : false,
             "type" : "String",
             "value" : ""
@@ -119,30 +104,10 @@
       "task" : {
         "command" : "/cloud/deprovision",
         "inputs" : {
-          "key_id" : {
-            "required" : true,
-            "type" : "String",
-            "value" : ""
-          },
-          "key" : {
-            "required" : true,
-            "type" : "String",
-            "value" : ""
-          },
-          "ssh_user" : {
-            "required" : true,
-            "type" : "String",
-            "value" : "root"
-          },
           "ssh_commands" : {
             "required" : false,
             "type" : "Array",
             "value" : []
-          },
-          "key_name" : {
-            "required" : true,
-            "type" : "String",
-            "value" : ""
           }
         },
         "outputs" : {},
