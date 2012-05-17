@@ -132,7 +132,7 @@ public class CloudWorker
         try
         {
             compute = initComputeService( provider, identity, credential );
-            String hostname = processHostname( compute );
+            String hostname = processHostname();
 
             logger.debug( "adding node to group {}", JCLOUDS_GROUP_NAME );
 
@@ -353,7 +353,7 @@ public class CloudWorker
         return "stub".equals( provider );
     }
 
-    private String processHostname( ComputeService compute )
+    private String processHostname()
     {
         String hostname = getField( "hostname" );
         if ( isEmpty( hostname ) )
@@ -366,7 +366,6 @@ public class CloudWorker
             {
                 hostname = "localhost";
             }
-            hostname += "_" + compute.listNodes().size();
         }
         return hostname;
     }
