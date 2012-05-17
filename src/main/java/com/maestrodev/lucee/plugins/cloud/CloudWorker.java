@@ -274,14 +274,20 @@ public class CloudWorker
                 compute.destroyNodesMatching( Predicates.<NodeMetadata> and( withIds( ids ),
                                                                              inGroup( JCLOUDS_GROUP_NAME ) ) );
 
+            // write to the output
+            List<String> nodeIds = Lists.newArrayList();
+            for ( NodeMetadata node : nodes )
+            {
+                nodeIds.add( node.getId() );
+            }
             if ( nodes.isEmpty() || ( nodes.size() != machines.size() ) )
             {
-                msg = format( "Not all machines were deprovisioned, tried: %s. Deprovisioned: %s%n", machines, nodes );
+                msg = format( "Not all machines were deprovisioned, tried: %s. Deprovisioned: %s%n", machines, nodeIds );
                 setError( msg );
             }
             else
             {
-                msg = format( "Deprovisioned machines: %s%n", nodes );
+                msg = format( "Deprovisioned machines: %s%n", nodeIds );
             }
             logger.debug( msg );
             writeOutput( msg );
