@@ -10,7 +10,6 @@
       <outputDirectory>/</outputDirectory>
       <directory>${basedir}</directory>
       <includes>
-        <include>manifest.json</include>
         <include>pom.xml</include>
         <include>README*</include>
       </includes>
@@ -20,14 +19,12 @@
       <directory>${basedir}/config</directory>
     </fileSet>
   </fileSets>
-<!--
-   <files>
+  <files>
     <file>
       <source>${project.build.outputDirectory}/manifest.json</source>
       <outputDirectory>/</outputDirectory>
     </file>
   </files>
- -->
 
   <dependencySets>
     <dependencySet>

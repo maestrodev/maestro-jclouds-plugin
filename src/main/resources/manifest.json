@@ -3,11 +3,11 @@
       "name" : "cloud provision",
       "description" : "Provisions A Virtual Machine At Cloud Provider using jClouds<br>[ssh_user] VM User For Performing Remote Tasks<br>[ssh_commands] A Set Of Shell Commands To Execute At VM Bootup<br>[image_id] ID Of The Image To Start<br>[hostname] DNS Name Of The VM To Set<br>[domain] Domain Of The Server To Set<br>[type] Name Of Cloud Provider (AWS|RackSpace|CollabNet)<br>[flavor_id] Machine Type To Start (t1.micro)<br>[groups] Security Groups <br>[key_name] Name Of The Key For Authentication<br>[availability_zone] Regional Location Of The VM (us-east-1a)<br>[user_data] Set Of Data To Pass To The VM",
       "author" : "Carlos Sanchez",
-      "version" : "1.0",
+      "version" : "${project.version}",
       "class" : "com.maestrodev.lucee.plugins.cloud.CloudWorker",
       "type" : "java",
       "dependencies" : [ {
-        "name" : "maestro-cloud-plugin-1.0-SNAPSHOT.jar"
+        "name" : "maestro-cloud-plugin-${project.version}.jar"
       }, {
         "name" : "pom.xml"
       } ],
@@ -93,11 +93,11 @@
       "name" : "cloud deprovision",
       "description" : "Terminates A VM Running In A Cloud Environment using jClouds<br>[ssh_user] User For Remote Commands <br>[ssh_commands] Commands To Be Run Before Terminations<br>[key_name] Key Used For Authentication",
       "author" : "Carlos Sanchez",
-      "version" : "1.0",
+      "version" : "${project.version}",
       "class" : "com.maestrodev.lucee.plugins.cloud.CloudWorker",
       "type" : "java",
       "dependencies" : [ {
-        "name" : "maestro-cloud-plugin-1.0-SNAPSHOT.jar"
+        "name" : "maestro-cloud-plugin-${project.version}.jar"
       }, {
         "name" : "pom.xml"
       } ],
