@@ -16,7 +16,7 @@
         "inputs" : {
           "key_id" : {
             "required" : true,
-            "type" : "String",
+            "type" : "Password",
             "value" : ""
           },
           "key" : {
