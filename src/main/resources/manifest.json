@@ -21,7 +21,7 @@
           },
           "key" : {
             "required" : true,
-            "type" : "String",
+            "type" : "Password",
             "value" : ""
           },
           "ssh_user" : {
