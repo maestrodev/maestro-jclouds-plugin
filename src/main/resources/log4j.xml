@@ -13,12 +13,12 @@
 
   <!-- Maestro Logger -->
   <logger name="com.maestrodev">
-    <level value="info" />
+    <level value="debug" />
   </logger>
 
   <!-- JClouds logger -->
   <category name="jclouds.compute">
-    <priority value="info" />
+    <priority value="debug" />
   </category>
 
   <!-- noisy loggers -->
